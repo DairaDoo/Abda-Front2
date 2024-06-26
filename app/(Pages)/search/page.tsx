@@ -38,19 +38,35 @@ export default function Search() {
 
             if (queryParam) {
                 const searchResponse = await fetch(`https://abda-e-commerce-backend.onrender.com/api/search?query=${queryParam}`);
-                const data = await searchResponse.json();
-                setProducts(data);
+                if (searchResponse.ok) {
+                    const data = await searchResponse.json();
+                    setProducts(data);
+                }
             }
         })();
     }, []);
 
-    
+    // Function to update cart item count
+    const fetchCartItemCount = async () => {
+        try {
+            const response = await fetch('https://abda-e-commerce-backend.onrender.com/api/cart/itemCount', {
+                credentials: 'include',
+            });
+            if (response.ok) {
+                const { count } = await response.json();
+                console.log('Cart items count:', count); // Update your state or do something with this count
+            }
+        } catch (error) {
+            console.error('Error fetching cart item count:', error);
+        }
+    };
+
     const sectionName = `Search Results for "${query}"`;
 
     return (
         <MainLayout isAdmin={isAdmin} onCategoryChange={() => {}}>
             <div>
-                <ProductsSearchContainer products={products} section_name={sectionName} />
+                <ProductsSearchContainer products={products} section_name={sectionName} fetchCartItemCount={fetchCartItemCount} />
             </div>
         </MainLayout>
     );
