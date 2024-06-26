@@ -36,55 +36,54 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ isLoggedIn, isAdmin, fetc
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
-    setAvailableQuantity(sizeAmountInterface?.size_amount || 1);
-  }, [sizeAmountInterface]);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
+    if (typeof window !== "undefined") { // Check if it's running in the browser
       const productVariantId = localStorage.getItem("selectedProductVariantId");
       if (!productVariantId) {
         console.error("Product variant ID not found in localStorage");
         setLoading(false);
         return;
       }
-
-      try {
-        const response = await fetch("https://abda-e-commerce-backend.onrender.com/api/products/getProductById", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productVariantId }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch product details");
+  
+      const storedColorId = parseInt(localStorage.getItem("selectedColorId") || "0");
+  
+      const fetchProduct = async () => {
+        try {
+          const response = await fetch("https://abda-e-commerce-backend.onrender.com/api/products/getProductById", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productVariantId }),
+          });
+  
+          if (!response.ok) {
+            throw new Error("Failed to fetch product details");
+          }
+  
+          const data = await response.json();
+          if (data && Array.isArray(data) && data.length > 0) {
+            const initialProduct: ProductInterface = data[0];
+            setProduct(initialProduct);
+  
+            const initialVariant = initialProduct.products.find(
+              p => p.color.color_id === storedColorId
+            ) || initialProduct.products[0];
+  
+            setSelectedVariant(initialVariant);
+            setSelectedColor(initialVariant.color);
+            setSizeAmountInterface(initialVariant.size_amount);
+            setAvailableQuantity(initialVariant.size_amount.size_amount || 1);
+          } else {
+            console.error("Product data is not in expected format:", data);
+            setProduct(null);
+          }
+        } catch (error) {
+          console.error("Error fetching product details:", error);
+        } finally {
+          setLoading(false);
         }
-
-        const data = await response.json();
-        if (data && Array.isArray(data) && data.length > 0) {
-          const initialProduct: ProductInterface = data[0];
-          setProduct(initialProduct);
-
-          const storedColorId = parseInt(localStorage.getItem("selectedColorId") || "0");
-          const initialVariant = initialProduct.products.find(
-            (p) => p.color.color_id === storedColorId
-          ) || initialProduct.products[0];
-
-          setSelectedVariant(initialVariant);
-          setSelectedColor(initialVariant.color);
-          setSizeAmountInterface(initialVariant.size_amount);
-          setAvailableQuantity(initialVariant.size_amount.size_amount || 1);
-        } else {
-          console.error("Product data is not in expected format:", data);
-          setProduct(null);
-        }
-      } catch (error) {
-        console.error("Error fetching product details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
+      };
+  
+      fetchProduct();
+    }
   }, []);
 
   
